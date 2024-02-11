@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn } from "@/app/auth";
+import { signIn, auth } from "@/app/auth";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { sql } from "@vercel/postgres";
@@ -34,6 +34,10 @@ export type State = {
 };
 
 export async function createInvoice(prevState: State, formData: FormData) {
+  const session = await auth();
+  if (session?.user?.email === "user@nextmail.com") {
+    throw new Error("Failed to Create Invoice: Not authorized");
+  }
   // Validate form using Zod
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get("customerId"),
@@ -79,6 +83,11 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData
 ) {
+  const session = await auth();
+  if (session?.user?.email === "user@nextmail.com") {
+    throw new Error("Failed to Update Invoice: Not authorized");
+  }
+
   const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get("customerId"),
     amount: formData.get("amount"),
@@ -110,7 +119,7 @@ export async function updateInvoice(
 }
 
 export async function deleteInvoice(id: string) {
-  throw new Error("Failed to Delete Invoice");
+  throw new Error("Failed to Delete Invoice: Not authorized");
 
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
